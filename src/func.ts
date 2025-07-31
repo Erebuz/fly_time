@@ -87,3 +87,18 @@ export function getShuffledRange(min: number, max: number) {
 
   return numbers
 }
+
+export function calculateAngleFromVertical(start: Coordinates, end: Coordinates) {
+  const dx = end.x - start.x
+  const dy = end.y - start.y
+
+  const angleRad = Math.atan2(dx, dy)
+
+  let angleDeg = angleRad * (180 / Math.PI)
+
+  if (angleDeg < 0) {
+    angleDeg += 360
+  }
+
+  return angleDeg
+}

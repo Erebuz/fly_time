@@ -1,30 +1,30 @@
 <template>
-  <div class="wrapper" ref="div_wrapper"></div>
+  <div class="wrapper" ref="div_wrapper" />
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { AnimationObject, type Coordinates } from '@/Fly.ts'
+import { Fly } from '@/Fly.ts'
 import { get_text_pixels, get_update_coords, getShuffledRange, getTime } from '@/func.ts'
 
 const div_wrapper = ref<HTMLDivElement | null>(null)
 
-const flies: AnimationObject[] = []
+const flies: Fly[] = []
 
 const max = {
-  x: document.documentElement.clientWidth - 50,
-  y: document.documentElement.clientHeight - 30,
+  x: document.documentElement.clientWidth - 20,
+  y: document.documentElement.clientHeight - 20,
 }
 
 const baseFontSize = 14
-const fontSizeMultiplier = 10
+const fontSizeMultiplier = 6
 const renderInterval = 20
 
 onMounted(() => {
   if (!div_wrapper.value) return
 
   for (let i = 0; i < 1000; i++) {
-    flies.push(new AnimationObject(div_wrapper.value, max))
+    flies.push(new Fly(div_wrapper.value, max))
   }
 
   flies.forEach((fly) => {
@@ -55,25 +55,11 @@ onMounted(() => {
           index,
           fontSizeMultiplier,
         )
-        const pathTime = (Math.random() + 1) * 400
+        const pathTime = (Math.random() + 1) * 200 + 400
         const awaitTime = (Math.random() + 1) * 800 + 200
-        fly.move(coordinate, pathTime / renderInterval, awaitTime, 0.9)
+        fly.move(coordinate, pathTime / renderInterval, awaitTime, 0.7)
       }
     })
-
-    // flies.forEach((fly, index) => {
-    //   const coordinate = get_update_coords(
-    //     textPixels.coords,
-    //     { x: text_x, y: text_y },
-    //     index,
-    //     fontSizeMultiplier,
-    //   )
-    //   if (coordinate) {
-    //     fly.move(coordinate, 50, 500)
-    //   } else {
-    //     fly.move()
-    //   }
-    // })
   }, 1000)
 })
 </script>

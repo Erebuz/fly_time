@@ -1,3 +1,5 @@
+import { calculateAngleFromVertical } from '@/func.ts'
+
 export interface Coordinates {
   x: number
   y: number
@@ -7,25 +9,35 @@ export class BaseObject {
   y: number = 0
   x: number = 0
   max: Coordinates = { x: 0, y: 0 }
+  rotate: number = 0
 
-  private parent: HTMLDivElement | null = null
-  private element: HTMLDivElement = document.createElement('div')
+  private parent: HTMLDivElement
+  public element: HTMLElement
 
   constructor(parent: HTMLDivElement, maxCoord: Coordinates) {
     this.parent = parent
+    this.max = maxCoord
+
+    this.element = document.createElement('div')
+    this.createElement()
+    this.element.style.position = 'absolute'
+    this.parent.appendChild(this.element)
+
+    this.update()
+  }
+
+  createElement() {
+    this.element = document.createElement('div')
     this.element.style.position = 'absolute'
     this.element.style.height = '10px'
     this.element.style.width = '10px'
     this.element.style.backgroundColor = 'black'
-    this.parent.appendChild(this.element)
-    this.max = maxCoord
-
-    this.update()
   }
 
   update() {
     this.element.style.top = `${this.y}px`
     this.element.style.left = `${this.x}px`
+    this.element.style.rotate = `${this.rotate}deg`
 
     requestAnimationFrame(this.update.bind(this))
   }
@@ -54,10 +66,11 @@ export class AnimationObject extends BaseObject {
 
     this.start = { x: this.x, y: this.y }
     this.target = target ? target : { x: Math.random() * this.max.x, y: Math.random() * this.max.y }
+    this.rotate = 180 - calculateAngleFromVertical(this.start, this.target)
     this.pathCyclesCount = pathCycles ? Math.round(pathCycles) : (Math.random() + 1) * 50
     this.awaitTime = awaitTimeMs ? Math.round(awaitTimeMs) : (Math.random() + 1) * 500
-    this.speed_x = (this.target.x - this.start.x) / this.pathCyclesCount + (1 - accuracy)
-    this.speed_y = (this.target.y - this.start.y) / this.pathCyclesCount + (1 - accuracy)
+    this.speed_x = (this.target.x - this.start.x) / this.pathCyclesCount + 2 * (1 - accuracy)
+    this.speed_y = (this.target.y - this.start.y) / this.pathCyclesCount + 2 * (1 - accuracy)
     this.reserved = true
   }
 
@@ -75,5 +88,14 @@ export class AnimationObject extends BaseObject {
         }, this.awaitTime)
       }
     }
+  }
+}
+
+export class Fly extends AnimationObject {
+  createElement() {
+    this.element = document.createElement('img') as HTMLImageElement
+    this.element.setAttribute('src', '/src/fly.png')
+    this.element.style.width = '10px'
+    this.element.style.height = '10px'
   }
 }
