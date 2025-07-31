@@ -1,66 +1,90 @@
 <template>
-  <div ref="div_wrapper"></div>
+  <div class="wrapper" ref="div_wrapper"></div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { AnimationObject, type Coordinates } from '@/Fly.ts'
+import { get_text_pixels, get_update_coords, getShuffledRange, getTime } from '@/func.ts'
 
 const div_wrapper = ref<HTMLDivElement | null>(null)
 
-function get_text_pixels(text: string, fontSize: number, font: string = 'Arial', bold = false) {
-  const canvas_input = document.createElement('canvas')
-  canvas_input.width = text.length * fontSize * 2
-  const ctx = canvas_input.getContext('2d') as CanvasRenderingContext2D
-  const font_bold = bold ? 'bold ' : ''
-  ctx.font = font_bold + `${fontSize}px ${font}`
-  ctx.fillStyle = 'black'
-  ctx.textBaseline = 'top'
-  ctx.fillText(text, 0, 0)
-  const metrics = ctx.measureText(text)
+const flies: AnimationObject[] = []
 
-  const imageData = ctx.getImageData(0, 0, canvas_input.width, canvas_input.height)
-  const pixels = imageData.data
-  const pixelCoords: { x: number; y: number }[] = []
-
-  for (let y = 0; y < canvas_input.height; y++) {
-    for (let x = 0; x < canvas_input.width; x++) {
-      const index = (y * canvas_input.width + x) * 4
-      const alpha = pixels[index + 3]
-      if (alpha > 0) {
-        pixelCoords.push({ x, y })
-      }
-    }
-  }
-  canvas_input.remove()
-
-  return {
-    coords: pixelCoords,
-    width: metrics.width,
-  }
+const max = {
+  x: document.documentElement.clientWidth - 50,
+  y: document.documentElement.clientHeight - 30,
 }
 
-function output_to_canvas(
-  coordinates: { x: number; y: number }[],
-  width: number,
-  wrapper: HTMLDivElement,
-) {
-  const canvas_output = document.createElement('canvas')
-  canvas_output.width = width
-
-  wrapper.appendChild(canvas_output)
-  const outputCtx = canvas_output.getContext('2d') as CanvasRenderingContext2D
-
-  coordinates.forEach(({ x, y }) => {
-    outputCtx.fillRect(x, y, 1, 1)
-  })
-}
+const baseFontSize = 14
+const fontSizeMultiplier = 10
+const renderInterval = 20
 
 onMounted(() => {
-  const coords = get_text_pixels('Привет муха', 40, 'Verdana', true)
-
   if (!div_wrapper.value) return
 
-  output_to_canvas(coords.coords, coords.width, div_wrapper.value)
+  for (let i = 0; i < 1000; i++) {
+    flies.push(new AnimationObject(div_wrapper.value, max))
+  }
+
+  flies.forEach((fly) => {
+    fly.move()
+  })
+
+  setInterval(() => {
+    flies.forEach((fly) => {
+      fly.render()
+    })
+  }, renderInterval)
+
+  setInterval(async () => {
+    const textPixels = await get_text_pixels(getTime(), baseFontSize, 'Verdana', false)
+
+    const text_x = Math.random() * (max.x - textPixels.width * fontSizeMultiplier)
+    const text_y = Math.random() * (max.y - baseFontSize * fontSizeMultiplier)
+
+    const indexes = getShuffledRange(0, flies.length - 1)
+
+    indexes.forEach((item, index) => {
+      const fly = flies[item]
+
+      if (index <= textPixels.coords.length - 1) {
+        const coordinate = get_update_coords(
+          textPixels.coords,
+          { x: text_x, y: text_y },
+          index,
+          fontSizeMultiplier,
+        )
+        const pathTime = (Math.random() + 1) * 400
+        const awaitTime = (Math.random() + 1) * 800 + 200
+        fly.move(coordinate, pathTime / renderInterval, awaitTime, 0.9)
+      }
+    })
+
+    // flies.forEach((fly, index) => {
+    //   const coordinate = get_update_coords(
+    //     textPixels.coords,
+    //     { x: text_x, y: text_y },
+    //     index,
+    //     fontSizeMultiplier,
+    //   )
+    //   if (coordinate) {
+    //     fly.move(coordinate, 50, 500)
+    //   } else {
+    //     fly.move()
+    //   }
+    // })
+  }, 1000)
 })
 </script>
 
+<style>
+body {
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+}
+.wrapper {
+  position: relative;
+}
+</style>
